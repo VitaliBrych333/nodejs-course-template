@@ -1,9 +1,11 @@
 const express = require('express');
 const asyncHandler = require('../handleMidleware/utils');
+const path = require('path');
+const uuid = require('uuid');
 // const newsModel = require('../models/news-model');
 const router = new express.Router();
 
-// const fs = require('fs');
+const fs = require('fs');
 
 const boards = require('../db/boards.json');
 
@@ -29,66 +31,105 @@ const boards = require('../db/boards.json');
 router.get(
   '/boards',
   // eslint-disable-next-line no-unused-vars
-  asyncHandler(async (req, res, next) => {
-    // const news = await newsModel.find({}).exec();
+  asyncHandler(async (req, res) => {
     res.json(boards);
     res.end();
   })
 );
 
-// router.get(
-//   '/boards/:id',
-//   asyncHandler(async (req, res, next) => {
-//     const id = req.params.id;
+router.get(
+  '/boards/:id',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id;
 
-//     // const news = await newsModel.findById(id).exec();
-//     if (news) {
-//       res.json(news);
-//       res.end();
-//     } else {
-//       throw new Error('Not found!');
-//     }
-//   })
-// );
+    const boardById = boards.boards.find(item => item.id === id);
 
-// router.post(
-//   '/boards',
-//   asyncHandler(async (req, res, next) => {
-//     // const content = req.body;
+    if (boardById) {
+      res.json(boardById);
+      res.end();
+    } else {
+      throw new Error('Not found!');
+    }
+  })
+);
 
-//     // if (!content['title']) {
-//     //   throw new Error('Did not set the title!');
-//     // }
+router.post(
+  '/boards',
+  asyncHandler(async (req, res) => {
+    const content = req.body;
 
-//     // await newsModel.create(content, (err) => {
-//     //   if (err) throw new Error(`${err}`);
-//     //   res.end();
-//     // });
-//   })
-// );
+    // eslint-disable-next-line no-prototype-builtins
+    if (content.hasOwnProperty('title') && content.hasOwnProperty('columns')) {
+      content.id = uuid();
+      boards.boards.push(content);
 
-// router.put(
-//   '/boards/:id',
-//   asyncHandler(async (req, res, next) => {
-//     // const id = req.params.id;
+      fs.writeFile(
+        path.join(__dirname, '../db/boards.json'),
+        JSON.stringify(boards, 0, 2),
+        'utf8',
+        err => {
+          if (err) {
+            throw new Error('Can not write!');
+          }
+          res.end();
+        }
+      );
+    } else {
+      throw new Error('Missed properties!');
+    }
+  })
+);
 
-//     // await newsModel.findByIdAndUpdate(id, {$set: req.body}, (err) => {
-//     //   if (err) throw new Error(`${err}`);
-//     //   res.end();
-//     // });
-//   })
-// );
+router.put(
+  '/boards/:id',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id;
+    const content = req.body;
+    const index = boards.boards.findIndex(item => item.id === id);
 
-// router.delete(
-//   '/boards/:id',
-//   asyncHandler(async (req, res, next) => {
-//     // const id = req.params.id;
+    if (index) {
+      // add checking on valid
+      boards.boards[index].title = content.title;
+      boards.boards[index].columns = content.columns;
 
-//     // await newsModel.findByIdAndDelete(id, (err, field) => {
-//     //   if (err) throw new Error(`${err}`);
-//     //   res.send(field);
-//     // });
-//   })
-// );
+      fs.writeFile(
+        path.join(__dirname, '../db/boards.json'),
+        JSON.stringify(boards, 0, 2),
+        'utf8',
+        err => {
+          if (err) {
+            throw new Error('Can not update!');
+          }
+          res.json(boards);
+          res.end();
+        }
+      );
+    } else {
+      throw new Error('Not found!');
+    }
+  })
+);
+
+router.delete(
+  '/boards/:id',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id;
+
+    boards.boards = boards.boards.filter(item => item.id !== id);
+
+    fs.writeFile(
+      path.join(__dirname, '../db/boards.json'),
+      JSON.stringify(boards, 0, 2),
+      'utf8',
+      err => {
+        if (err) {
+          throw new Error('Can not update!');
+        }
+        res.json(boards);
+        res.end();
+      }
+    );
+  })
+);
 
 module.exports = router;
