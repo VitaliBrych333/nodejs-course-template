@@ -2,31 +2,11 @@ const express = require('express');
 const asyncHandler = require('../handleMidleware/utils');
 const path = require('path');
 const uuid = require('uuid');
-// const newsModel = require('../models/news-model');
 const router = new express.Router();
 
 const fs = require('fs');
 
 const boards = require('../db/boards.json');
-
-// const auth = (req, res, next) => {
-//   if (req.isAuthenticated()) {
-//     next();
-//   } else {
-//     res.send('YOU not autorized');
-//     res.end();
-//   }
-// };
-
-// router.get(
-//   '/logout',
-//   asyncHandler(async (req, res, next) => {
-//     req.logout();
-//     req.session.destroy(() => {
-//       res.redirect('/authorization');
-//     });
-//   })
-// );
 
 router.get(
   '/boards',
