@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 const express = require('express');
 const asyncHandler = require('../handleMidleware/utils');
 const path = require('path');
@@ -12,7 +13,12 @@ router.get(
   '/tasks',
   // eslint-disable-next-line no-unused-vars
   asyncHandler(async (req, res) => {
-    res.json(tasks);
+    const id = req.params.id;
+    let allTasks = tasks.tasks;
+    if (id) {
+      allTasks = tasks.tasks.filter(item => item.boardId === id);
+    }
+    res.json(allTasks);
     res.end();
   })
 );
@@ -38,9 +44,16 @@ router.post(
   asyncHandler(async (req, res) => {
     const content = req.body;
 
-    // eslint-disable-next-line no-prototype-builtins
-    if (content.hasOwnProperty('title') && content.hasOwnProperty('columns')) {
+    if (
+      content.hasOwnProperty('title') &&
+      content.hasOwnProperty('order') &&
+      content.hasOwnProperty('description')
+    ) {
       content.id = uuid();
+      content.userId = uuid();
+      content.boardId = uuid();
+      content.columnId = uuid();
+
       tasks.tasks.push(content);
 
       fs.writeFile(
@@ -70,7 +83,11 @@ router.put(
     if (index) {
       // add checking on valid
       tasks.tasks[index].title = content.title;
-      tasks.tasks[index].columns = content.columns;
+      tasks.tasks[index].order = content.order;
+      tasks.tasks[index].description = content.description;
+      tasks.tasks[index].userId = content.userId;
+      tasks.tasks[index].boardId = content.boardId;
+      tasks.tasks[index].columnId = content.columnId;
 
       fs.writeFile(
         path.join(__dirname, '../db/tasks.json'),
