@@ -10,23 +10,26 @@ router.route('/').get(async (req, res) => {
 
 router.route('/:id').get(async (req, res) => {
   const user = await usersService.getUserById(req.params.id);
+
   res.json(User.toResponse(user));
 });
 
 router.route('/').post(async (req, res) => {
   const newUser = await usersService.createUser(req.body);
+
   res.json(User.toResponse(newUser));
 });
 
 router.route('/:id').put(async (req, res) => {
-  const updatedUser = await usersService.updateUser(req.params.id, req.body);
-  res.json(User.toResponse(updatedUser));
+  const updUser = await usersService.updateUser(req.params.id, req.body);
+
+  res.json(User.toResponse(updUser));
 });
 
 router.route('/:id').delete(async (req, res) => {
-  const deletedUser = await usersService.deleteUser(req.params.id);
+  const delUser = await usersService.deleteUser(req.params.id);
 
-  if (deletedUser) {
+  if (delUser) {
     res.status(204).end();
   } else {
     res.status(404).end();
