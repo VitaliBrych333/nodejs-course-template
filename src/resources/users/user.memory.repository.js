@@ -53,9 +53,12 @@ const createUser = async params => {
 const updateUser = async (id, details) => {
   const user = users.find(item => item.id === id);
 
-  Object.assign(user, details);
+  if (user) {
+    Object.assign(user, details);
+    return user;
+  }
 
-  return user;
+  return null;
 };
 
 const deleteUser = async id => {

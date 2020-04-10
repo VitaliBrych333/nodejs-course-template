@@ -103,16 +103,18 @@ const createBoard = async details => {
 const updateBoard = async (id, details) => {
   const board = boards.find(item => item.id === id);
 
-  for (const column of board.columns) {
-    for (const detailColumn of details.columns) {
-      if (column.id === detailColumn.id) {
-        Object.assign(board, details);
+  if (board) {
+    for (const column of board.columns) {
+      for (const detailColumn of details.columns) {
+        if (column.id === detailColumn.id) {
+          Object.assign(board, details);
 
-        return board;
+          return board;
+        }
       }
-
-      return false;
     }
+  } else {
+    return null;
   }
 };
 
