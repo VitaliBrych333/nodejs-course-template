@@ -37,16 +37,4 @@ function handleError(err, res) {
   res.status(INTERNAL_SERVER_ERROR).send(getStatusText(INTERNAL_SERVER_ERROR));
 }
 
-process.on('uncaughtException', err => {
-  logger.error({ statCode: 500, message: err.message });
-
-  const exit = process.exit;
-
-  exit(1);
-});
-
-process.on('unhandledRejection', reason => {
-  logger.error({ statCode: 500, message: reason });
-});
-
-module.exports = { ErrorHandler, handleError };
+module.exports = { logger, ErrorHandler, handleError };

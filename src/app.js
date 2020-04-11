@@ -8,7 +8,7 @@ const boardRouter = require('./resources/boards/board.router');
 
 const morgan = require('morgan');
 const { createWriteStream } = require('fs');
-const { handleError } = require('./errorHandler');
+const { logger, handleError } = require('./errorHandler');
 
 const app = express();
 const swaggerDocument = YAML.load(path.join(__dirname, '../doc/api.yaml'));
@@ -39,6 +39,18 @@ app.use('/boards/:boardId/tasks', taskRouter);
 app.use((err, req, res, next) => {
   handleError(err, res);
   next();
+});
+
+process.on('uncaughtException', err => {
+  logger.error({ statCode: 500, message: err.message });
+
+  const exit = process.exit;
+
+  exit(1);
+});
+
+process.on('unhandledRejection', reason => {
+  logger.error({ statCode: 500, message: reason });
 });
 
 module.exports = app;
