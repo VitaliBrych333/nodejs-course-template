@@ -10,8 +10,28 @@ const morgan = require('morgan');
 const { createWriteStream } = require('fs');
 const { logger, handleError } = require('./errorHandler');
 
+const { MONGO_CONNECTION_STRING } = require('./common/config');
+
 const app = express();
 const swaggerDocument = YAML.load(path.join(__dirname, '../doc/api.yaml'));
+
+const mongoose = require('mongoose');
+
+const connectDB = cb => {
+  mongoose.connect(MONGO_CONNECTION_STRING, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  });
+
+  const db = mongoose.connection;
+
+  db.on('error', console.error.bind(console, 'MongoDB error connection:'));
+  db.once('open', async () => {
+    console.log('Connected to DB');
+    await db.dropDatabase();
+    cb();
+  });
+};
 
 app.use(express.json());
 
@@ -46,11 +66,11 @@ process.on('uncaughtException', err => {
 
   const exit = process.exit;
 
-  exit(1);
+  logger.on('finish', () => exit(1));
 });
 
 process.on('unhandledRejection', reason => {
   logger.error({ statCode: 500, message: reason });
 });
 
-module.exports = app;
+module.exports = { app, connectDB };

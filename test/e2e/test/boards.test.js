@@ -14,6 +14,7 @@ const TEST_BOARD_DATA = {
 };
 describe('Boards suite', () => {
   let request = unauthorizedRequest;
+  let testBoardId;
 
   beforeAll(async () => {
     if (shouldAuthorizationBeTested) {
@@ -23,7 +24,14 @@ describe('Boards suite', () => {
     await request
       .post(routes.boards.create)
       .set('Accept', 'application/json')
-      .send(TEST_BOARD_DATA);
+      .send(TEST_BOARD_DATA)
+      .then(res => (testBoardId = res.body.id));
+  });
+
+  afterAll(async () => {
+    await request
+      .delete(routes.boards.delete(testBoardId))
+      .then(res => expect(res.status).oneOf([200, 204]));
   });
 
   describe('GET', () => {
@@ -67,6 +75,8 @@ describe('Boards suite', () => {
 
   describe('POST', () => {
     it('should create board successfully', async () => {
+      let boardId;
+
       await request
         .post(routes.boards.create)
         .set('Accept', 'application/json')
@@ -74,9 +84,13 @@ describe('Boards suite', () => {
         .expect(200)
         .expect('Content-Type', /json/)
         .then(res => {
+          boardId = res.body.id;
           expect(res.body.id).to.be.a('string');
           jestExpect(res.body).toMatchObject(TEST_BOARD_DATA);
         });
+
+      // Teardown
+      await request.delete(routes.boards.delete(boardId));
     });
   });
 
@@ -120,16 +134,16 @@ describe('Boards suite', () => {
 
   describe('DELETE', () => {
     it('should delete board successfully', async () => {
+      // Setup:
       let boardId;
-      // Setup
+
       await request
-        .get(routes.boards.getAll)
+        .post(routes.boards.create)
         .set('Accept', 'application/json')
+        .send(TEST_BOARD_DATA)
         .expect(200)
-        .then(res => {
-          jestExpect(res.body).not.toHaveLength(0);
-          boardId = res.body[0].id;
-        });
+        .expect('Content-Type', /json/)
+        .then(res => (boardId = res.body.id));
 
       // Test
       await request

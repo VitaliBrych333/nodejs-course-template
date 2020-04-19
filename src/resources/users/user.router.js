@@ -7,10 +7,6 @@ router.route('/').get(async (req, res, next) => {
   try {
     const users = await usersService.getAll();
 
-    if (!users.length) {
-      throw new ErrorHandler(401, 'Access token is invalid');
-    }
-    // map user fields to exclude secret fields like "password"
     res.json(users.map(User.toResponse));
   } catch (err) {
     return next(err);
@@ -53,11 +49,13 @@ router.route('/:id').put(async (req, res, next) => {
 
     const updUser = await usersService.updateUser(req.params.id, req.body);
 
-    if (!updUser) {
+    if (!updUser.n) {
       throw new ErrorHandler(404, 'Error, can not update the user');
     }
 
-    res.json(User.toResponse(updUser));
+    const user = await usersService.getUserById(req.params.id);
+
+    res.json(User.toResponse(user));
   } catch (err) {
     return next(err);
   }

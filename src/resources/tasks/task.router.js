@@ -1,6 +1,7 @@
 const router = require('express').Router({ mergeParams: true });
 const tasksService = require('./task.service');
 const { ErrorHandler } = require('../../errorHandler');
+const Task = require('./task.model');
 
 router.route('/').get(async (req, res, next) => {
   try {
@@ -10,7 +11,7 @@ router.route('/').get(async (req, res, next) => {
       throw new ErrorHandler(401, 'Access token is invalid');
     }
 
-    res.json(tasks);
+    res.json(tasks.map(Task.toResponse));
   } catch (err) {
     return next(err);
   }
@@ -24,7 +25,7 @@ router.route('/:id').get(async (req, res, next) => {
       throw new ErrorHandler(404, 'Task not found');
     }
 
-    res.json(taskById);
+    res.json(Task.toResponse(taskById));
   } catch (err) {
     return next(err);
   }
@@ -38,7 +39,7 @@ router.route('/').post(async (req, res, next) => {
 
     const newTask = await tasksService.createTask(req.params, req.body);
 
-    res.json(newTask);
+    res.json(Task.toResponse(newTask));
   } catch (err) {
     return next(err);
   }
@@ -52,11 +53,13 @@ router.route('/:id').put(async (req, res, next) => {
 
     const updTask = await tasksService.updateTask(req.params, req.body);
 
-    if (!updTask) {
+    if (!updTask.n) {
       throw new ErrorHandler(404, 'Error, can not update the task');
     }
 
-    res.json(updTask);
+    const task = await tasksService.getTaskById(req.params);
+
+    res.json(Task.toResponse(task));
   } catch (err) {
     return next(err);
   }

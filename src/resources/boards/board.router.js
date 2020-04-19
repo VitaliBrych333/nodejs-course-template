@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const boardsService = require('./board.service');
 const { ErrorHandler } = require('../../errorHandler');
+const Board = require('./board.model');
 
 router.route('/').get(async (req, res, next) => {
   try {
@@ -10,7 +11,7 @@ router.route('/').get(async (req, res, next) => {
       throw new ErrorHandler(401, 'Access token is invalid');
     }
 
-    res.json(boards);
+    res.json(boards.map(Board.toResponse));
   } catch (err) {
     return next(err);
   }
@@ -24,7 +25,7 @@ router.route('/:id').get(async (req, res, next) => {
       throw new ErrorHandler(404, 'Board not found');
     }
 
-    res.json(board);
+    res.json(Board.toResponse(board));
   } catch (err) {
     return next(err);
   }
@@ -38,7 +39,7 @@ router.route('/').post(async (req, res, next) => {
 
     const newBoard = await boardsService.createBoard(req.body);
 
-    res.json(newBoard);
+    res.json(Board.toResponse(newBoard));
   } catch (err) {
     return next(err);
   }
@@ -52,10 +53,13 @@ router.route('/:id').put(async (req, res, next) => {
 
     const updBoard = await boardsService.updateBoard(req.params.id, req.body);
 
-    if (!updBoard) {
+    if (!updBoard.n) {
       throw new ErrorHandler(404, 'Error, can not update the board');
     }
-    res.json(updBoard);
+
+    const board = await boardsService.getBoardById(req.params.id);
+
+    res.json(Board.toResponse(board));
   } catch (err) {
     return next(err);
   }
@@ -65,7 +69,7 @@ router.route('/:id').delete(async (req, res, next) => {
   try {
     const delBoard = await boardsService.deleteBoard(req.params.id);
 
-    if (!delBoard) {
+    if (!delBoard.deletedCount) {
       throw new ErrorHandler(404, 'Error, can not delete the board');
     }
     res.status(204).end();
