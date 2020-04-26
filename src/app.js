@@ -5,6 +5,7 @@ const YAML = require('yamljs');
 const userRouter = require('./resources/users/user.router');
 const taskRouter = require('./resources/tasks/task.router');
 const boardRouter = require('./resources/boards/board.router');
+const loginRouter = require('./resources/login/login.router');
 
 const morgan = require('morgan');
 const { createWriteStream } = require('fs');
@@ -15,7 +16,9 @@ const { MONGO_CONNECTION_STRING } = require('./common/config');
 const app = express();
 const swaggerDocument = YAML.load(path.join(__dirname, '../doc/api.yaml'));
 
+const { createUser } = require('./resources/users/user.service');
 const mongoose = require('mongoose');
+const { authenticate } = require('./auth');
 
 const connectDB = cb => {
   mongoose.connect(MONGO_CONNECTION_STRING, {
@@ -23,12 +26,23 @@ const connectDB = cb => {
     useUnifiedTopology: true
   });
 
+  mongoose.set('useCreateIndex', true);
+
   const db = mongoose.connection;
 
   db.on('error', console.error.bind(console, 'MongoDB error connection:'));
   db.once('open', async () => {
     console.log('Connected to DB');
-    await db.dropDatabase();
+
+    try {
+      await createUser({ login: 'admin', name: 'admin', password: 'admin' });
+    } catch (err) {
+      if (err && err.code === 11000) {
+        console.log('User exists');
+      } else {
+        console.log(err);
+      }
+    }
     cb();
   });
 };
@@ -52,9 +66,10 @@ app.use('/', (req, res, next) => {
   next();
 });
 
-app.use('/users', userRouter);
-app.use('/boards', boardRouter);
-app.use('/boards/:boardId/tasks', taskRouter);
+app.use('/login', loginRouter);
+app.use('/users', authenticate, userRouter);
+app.use('/boards', authenticate, boardRouter);
+app.use('/boards/:boardId/tasks', authenticate, taskRouter);
 
 app.use((err, req, res, next) => {
   handleError(err, res);
